@@ -54,9 +54,9 @@ From source file, it
      }
  
   // creates empty hists  
-    TH1D* source = new TH1D("Source without pedestal", TString::Format("QDC histogram of channel %i",n), bins, left, right); 
-    TH1D* pedestal = new TH1D("Pedestal",TString::Format("Pedestal histogram of channel %i",n), 50, 200, 250);
-    TH1D* source_ped = new TH1D("Source with pedestal", TString::Format("QDC histogram of channel %i with pedestal",n), bins, left, right);
+    TH1D* source = new TH1D("Source without pedestal", TString::Format("QDC histogram of channel %i; QDC counts; Counts",n), bins, left, right); 
+    TH1D* pedestal = new TH1D("Pedestal",TString::Format("Pedestal histogram of channel %i; QDC counts; Counts",n), 50, 200, 250);
+    TH1D* source_ped = new TH1D("Source with pedestal", TString::Format("QDC histogram of channel %i with pedestal; QDC counts; Counts",n), bins, left, right);
  
   // fills pedestal hist
     nentries = treePedestal->GetEntries();
@@ -102,17 +102,6 @@ From source file, it
     c1->cd(3);
     source_ped->SetLineColor(4);
     source_ped->Draw();
-
-    // renames axes differently
-    pedestal->GetXaxis()->SetTitle("QDC Counts");
-    pedestal->GetYaxis()->SetTitle("Counts");
-    pedestal->GetYaxis()->SetTitleOffset(1.5);
-    source->GetXaxis()->SetTitle("QDC Counts");
-    source->GetYaxis()->SetTitle("Counts");
-    source->GetYaxis()->SetTitleOffset(1.5);
-    source_ped->GetXaxis()->SetTitle("QDC Counts");
-    source_ped->GetYaxis()->SetTitle("Counts");
-    source_ped->GetYaxis()->SetTitleOffset(1.5);
 
     //saves hists
     if (print == 1) c1->SaveAs("ris_analyze.png");
