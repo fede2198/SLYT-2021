@@ -8,7 +8,7 @@
 # daq for the CAEN bridge v1718
 
 
-OBJS = main_tdcProva.o v1718_lib.o vme_bridge.o adc792_lib.o tdcdd00_lib.o root.o
+OBJS = main_tdc.o v1718_lib.o vme_bridge.o adc792_lib.o tdcdd00_lib.o root.o
 HEAD = main_daqpet.h v1718_lib.h vme_bridge.h adc792_lib.h tdcdd00_lib.h
 
 INCLUDE_DIR = .
@@ -19,7 +19,7 @@ acquire_init: $(OBJS)
 	g++ -m32 -g -DLINUX -o acquire_init $(OBJS) -lncurses -lm -lrt -l CAENVME $(shell root-config --glibs)
 
 
-main_tdcProva.o: main_tdcProva.c main_daqpet.h v1718_lib.h vme_bridge.h adc792_lib.h tdcdd00_lib.h root.h
+main_tdc.o: main_tdc.c main_daqpet.h v1718_lib.h vme_bridge.h adc792_lib.h tdcdd00_lib.h root.h
 	g++ -m32 $(COPTS) -c main_tdcProva.c
 
 v1718_lib.o: v1718_lib.c v1718_lib.h 
