@@ -22,6 +22,8 @@
 #define TDC_SIZE 16
 #define QDC_SIZE 32
 #define TOT_SIZE 32 + 16 
+#define SIZE_CH 9
+#define SIZE_TCH 5
 
 using namespace std;
 
@@ -31,31 +33,30 @@ void lyso_analyze(const char* fileName, const char* filePedestal, int nbins, int
 	int counts[QDC_SIZE], counts_tdc[TDC_SIZE], counts2[QDC_SIZE];
 	stringstream tmp_str;
   	
-	const int SIZE = 5;
 	vector<int> ch, ch_orig, tch;
 	
 	//channels selected
-	int n_orig[SIZE] = {36,28,37,44,35};
-	int n[SIZE] = {14,5,9,2,1};
-	ch = vector<int> (n,n + SIZE);
-	ch_orig = vector<int> (n_orig,n_orig + SIZE);
+	int n_orig[SIZE_CH] = {28,36,29,20,27,21,19,37,35};
+	int n[SIZE_CH] = {14,5,9,2,1,3,6,7,4};
+	ch = vector<int> (n,n + SIZE_CH);
+	ch_orig = vector<int> (n_orig,n_orig + SIZE_CH);
 	
 	int index;
 	if(centralCh != 0){
 		cout << "Working with TDC filter set on central channel " << centralCh << endl;
 	        tdcCh2check = 1;
-		auto it = find(ch_orig.begin(), ch_orig.end(), centralCh);	 
+		vector<int>::iterator it = find(ch_orig.begin(), ch_orig.end(), centralCh);	 
 		
 		// If element was found, assigns it to index. Otherwise, it prints an error
-	       	if (it != ch_orig.end()) index = it - ch_orig.begin();
+	       	if (it != ch_orig.end()) index = distance(ch_orig.begin(), it);
 		else fprintf(stderr,"Please insert a correct central channel!\n");
 	
 		tch.push_back(index);	
 		
 	}else{
 		cout << "Working with TDC filter set on selecting at least " << tdcCh2check << " active channels per event" << endl; 
-		int n_tdc[SIZE] = {0,1,2,3,4};
-		tch = vector<int> (n_tdc, n_tdc + SIZE);
+		int n_tdc[SIZE_TCH] = {0,1,2,3,4};
+		tch = vector<int> (n_tdc, n_tdc + SIZE_TCH);
 	}
 
 	// opens files and takes "datatree" TTree
@@ -78,7 +79,7 @@ void lyso_analyze(const char* fileName, const char* filePedestal, int nbins, int
 		tmp_str << "TCH" << k;
 		tree->SetBranchAddress(tmp_str.str().c_str(), (counts_tdc + k));
 	}
- 
+	
 	//creates canvas
 	TCanvas* c_ped = new TCanvas("c_ped", "c_ped", 10, 10, 1000, 1000);
 	TCanvas* c_source_ped = new TCanvas("c_source", "c_source", 10, 10, 1000, 900);
@@ -91,20 +92,21 @@ void lyso_analyze(const char* fileName, const char* filePedestal, int nbins, int
 	vector<TH1D*> source_lyso;
 	vector<TH1D*> source_ped_lyso;
 	vector<TFitResultPtr> s;
-	TF1* fitPed = new TF1("fitPed","gaus",0,200); 
+	TF1* fitPed = new TF1("fitPed","gaus",0, 500); 
 	TH1D* tot = new TH1D("Parameters", "Sum of the selected channels without pedestal; QDC Counts; Counts;", nbins, 0, 4096);
 	TH1D* tot_ped = new TH1D("Parameters with background", "Sum of the selected channels with pedestal; QDC Counts; Counts;", nbins, 0, 4096);
 
 	//get entries
 	Long64_t nentries_ped = treePedestal->GetEntries();
 	Long64_t nentries_sig = tree->GetEntries();
-  
+   
 	// creates empty hists   
 	for(unsigned int k = 0; k < ch.size(); k++){
-		pedestal_lyso.push_back(new TH1D(TString::Format("Pedestal LYSO %d",ch_orig[k]),TString::Format("Pedestal histogram of channel %i; QDC Counts; Counts;",ch_orig[k]), 100, 0, 400));
+		pedestal_lyso.push_back(new TH1D(TString::Format("Pedestal LYSO %d",ch_orig[k]),TString::Format("Pedestal histogram of channel %i; QDC Counts; Counts;",ch_orig[k]), 100, 0, 500));
 		source_ped_lyso.push_back(new TH1D(TString::Format("Source without pedestal LYSO %d", ch_orig[k]), TString::Format("QDC CH%i with pedestal; QDC Counts; Counts;",ch_orig[k]), nbins, 0, 4096));
 		source_lyso.push_back(new TH1D(TString::Format("Source with pedestal LYSO %d", ch_orig[k]), TString::Format("QDC CH%i with pedestal; QDC Counts; Counts;",ch_orig[k]), nbins, 0, 4096));
 	}	
+
 
 	//get pedestal entries
 	for(Long64_t entry = 0; entry < nentries_ped; entry++) {
@@ -118,7 +120,7 @@ void lyso_analyze(const char* fileName, const char* filePedestal, int nbins, int
 	for(unsigned int k = 0; k < ch.size(); k++){
 		c_ped->cd(k + 1);
 		pedestal_lyso[k]->Draw();
-			
+		
 		// pedestal gaussian fit
 		s.push_back(pedestal_lyso[k]->Fit(fitPed,"SQ", "R"));  	
 	}
@@ -132,8 +134,8 @@ void lyso_analyze(const char* fileName, const char* filePedestal, int nbins, int
 
 		//use tdc as a filter: must be below 4090, due to C discharge
 		for(unsigned int j = 0; j < tch.size(); j++){
-			n_counts = counts_tdc[j];
-			if(n_counts> thr && n_counts < 4090) counter++;
+			n_counts = counts_tdc[tch[j]];
+			if(n_counts > thr && n_counts < 4090) counter++;
 		}
 
 		//signal is accepted only if counter> tdcCh2check
