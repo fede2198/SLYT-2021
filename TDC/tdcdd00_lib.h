@@ -47,9 +47,6 @@
 #define tdcdd00_debug   1
 
 int init_tdcdd00(int32_t BHandle);
-unsigned short read_tdcdd00_simple(int32_t BHandle, int *pDataTdc);
-std::vector<int> read_tdcdd00(int32_t BHandle, int pstatus);
-std::vector<int> readFasttdcdd00(int32_t BHandle, short int* pstatus);
 std::vector<unsigned long> read_block_tdcdd00(int32_t BHandle, int& status);
 int data_reset_tdcdd00(int32_t BHandle);
 
