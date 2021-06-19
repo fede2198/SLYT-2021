@@ -3,48 +3,33 @@
 /* ---------------------------------------------------------------------------
      * ** main_tdc.c
 
-     * Questo programma permette di comunicare con l'elettronica VME (V792, V1718)
-     * della CAEN utilizzando le CaenVMELIB per inizializzare e acquisire i dati.
-     *
-     * Opzioni 
-     * 
-     * -q <filename> salva l'output del qdc in formato testuale nel file filename
-     *  (obbligatorio)
-     * -q <filename> salva l'output del tdc in formato testuale nel file filename
-     *  (obbligatorio)
-     *
-     * -n <nevents> imposta il numero di eventi da acquisire
-     * 
-     * -p <IPED> imposta la corrente di piedistallo
-     *
-     * -T <time> imposta il tempo di acquisizione
-     *
-     * -r genera automaticamente il file di root con nome <filename>.root
-     *
-     * -v aumenta la verbosità del programma fornendo informazioni utili per i debug
-     *  ATTENZIONE l'aumento della verbosità diminuisce la rate massima
-     *  d'acquisizione non utilizzare -v durante la presa dati ma solo per
-     *  effettuare debug
-     *
-     * il programma dovra' ricevere almeno o il numero di eventi o il tempo di
-     * acquisizione se vengono forniti tutti e due il programma termina quando una
-     * delle due condizioni viene raggiunta ignorando l'altra. Per arrestare il
-     * programma manualmente premere Ctrl+c per deinizializzare correttamente
-     * l'elettronica e salvare i dati acquisiti sul disco.
-     *
-     * Il presente programma e' rilasciato "as is" gli autori non si assumono
-     * nessuna responsabilita' per aventuali malfunzionamenti o bug
-     * 
-     *NOTA: clear_veto fa in modo che il segnale di veto in uscita corrisponda allo zero NIM logico;
-     *      set_veto fa in modo che il segnale di veto in uscita corrisponda all'1 NIM logico.
-     *      Le funzioni clear_veto e set_veto restituiscono un valore int pari ad 1 se le rispettive operazioni sono andate a buon fine,
-     *      altro in caso contrario.
-     *
-     * **
-     * ** Author: Daniele Racanelli, Flavio Pisani, Paolo Cretaro
-     * **Coauthor: Gaia Franciosini, Luca Ceccarelli, Pippo Franco, Alessandro Santoni
-
-
+     Data acquisition program for Physics Laboratory II exam, MSc Physics, Sapienza Università di Roma
+ * 
+ * Options: 
+ * 
+ * -o <filename> saves the output in a file called filename
+ *  (obbligatorio)
+ *
+ * -n <nevents> sets the number of events to acquire
+ * 
+ * -p <IPED> sets the pedestal current
+ *
+ * -t <time> sets acquisition time
+ *
+ * -r generates automatically a root file called <filename>.root
+ *
+ * -v increases the verbosity of the program, giving more information useful for debug
+ *  ATTENTION verbosity decreases max acquisition rate, use it just for debug
+ *  
+ * The program needs or the number of events or the acquisition time. If both are set, 
+ * than the program stops whne one of the conditions is satisfied.To stop it correctly, please
+ * press Ctr+c.
+ *
+ * NOTE: clear_veto assures the veto signal corresponds to 0 (logic NIM);
+ *      set_veto assures the veto signal corresponds to 1 (logic NIM);
+ *      Both return 1 if they are working correctly.
+ *
+ * ** Authors: Nicola Alborè, Maria Adriana Sabia, Federica Troni and Alberto Tubito
 
 
      * -------------------------------------------------------------------------*/
@@ -104,7 +89,7 @@
 
    int main(int argc, char** argv)
     {
-	    /************************* PARSING DEI PARAMETRI **************************
+	    /************************* PARAMETERS PARSING **************************
 	     */
 	    int opt;
 	    unsigned long EvMax = 0;
@@ -163,7 +148,7 @@
 	    if(output_filename_basic == NULL || (EvMax == 0 && TMax == 0)){
 		    print_usage(stderr, argv[0], EXIT_FAILURE);
 	    }
-	    /********************************* FINE PARSING PARAMETRI *********************************/
+	    /********************************* PARMETERS FINE PARSING *********************************/
 	    printf("Selected ped=%lu \n", Pmax);	
 
 	    int status_init,status;
