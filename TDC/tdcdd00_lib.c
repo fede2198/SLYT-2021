@@ -154,9 +154,6 @@ int data_reset_tdcdd00(int32_t BHandle){
 		ret_val = 1;
 			fprintf(stderr, "ERROR data reset not released\n");
 	}
-
-//	printf("DATALONG AT THE END IS: %lu\n", DataLong);
-
 	return ret_val;
 }
 
@@ -169,16 +166,10 @@ vector<unsigned long> read_block_tdcdd00(int32_t BHandle, int& status)
   int nbytes_tran = 0;
   unsigned long dataV[(Vdd00N_CHANNEL+2)*2*Vdd00N_CHANNEL]={0};
  
-  // int wr= (Vdd00N_CHANNEL+2)*Vdd00N_CHANNEL*4*2; //pag 42 tdc manual: output buffer format
   int wr= (Vdd00N_CHANNEL+2)*Vdd00N_CHANNEL/4; //pag 42 tdc manual: output buffer format in bytes
   int caenst, caenst2;
   unsigned long address, address2, data, data2;
   unsigned long tdcdd00_rdy;
-
-  /*
-    check if the fifo has something inside: use status register 1
-   */  
-  //in adc792 : address = adcaddrs.at(idB) + V792N_REG1_STATUS; //i-th board address + 0x100e , here we only have one address
 
   address = Vdd00N_ADDRESS + Vdd00N_REG1_STATUS;
   caenst = CAENVME_ReadCycle(BHandle,address,&data,cvA32_U_DATA,cvD16);
@@ -189,15 +180,12 @@ vector<unsigned long> read_block_tdcdd00(int32_t BHandle, int& status)
 
   address2 = Vdd00N_ADDRESS + Vdd00N_BIT_SET2;
   caenst2 = CAENVME_ReadCycle(BHandle,address2, &data2,cvA32_U_DATA,cvD16);
-  //printf("REGISTRO 2 IN READ BLOCK  = %lu \n",data2);
-
 
   if(tdcdd00_rdy){
 		address = Vdd00N_ADDRESS + Vdd00N_OUTPUT_BUFFER;	    
 
 		status *= 1 - CAENVME_BLTReadCycle(BHandle,address,&dataV,wr, cvA32_U_BLT,cvD32,&nbytes_tran); //  wr = size of the transfer in byte and &nbytes_tran = number of transferred bits
-		//status *= 1 -  CAENVME_ReadCycle(BHandle,address,&dataV, cvA32_U_DATA,cvD32);
- 		 if(tdcdd00_debug && nbytes_tran != wr){
+		 if(tdcdd00_debug && nbytes_tran != wr){
 			fprintf(stderr, "warning different block size\n");
 		}
 	}
