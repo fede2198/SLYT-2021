@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -61,11 +62,12 @@ void ASCII2TTree(const char* inputFileName, const char* outputFileName, int n_qd
 
 	    stringstream str(line);
 	    str >> nevents;
-	    for (int i = 0; i < n_qdc + n_tdc; ++i)
-	    {
-		    str >> channels[i];
+	    if(channels[32] != (-999)){	
+		    for (int i = 0; i < n_qdc + n_tdc; ++i){
+			    str >> channels[i];
+		    }
+		    tree->Fill();
 	    }
-	    tree->Fill();
     }
 
     // scrive il numero di eventi (= numero righe del file) nel TTree.

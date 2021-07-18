@@ -3,33 +3,48 @@
 /* ---------------------------------------------------------------------------
      * ** main_tdc.c
 
-     Data acquisition program for Physics Laboratory II exam, MSc Physics, Sapienza Università di Roma
- * 
- * Options: 
- * 
- * -o <filename> saves the output in a file called filename
- *  (obbligatorio)
- *
- * -n <nevents> sets the number of events to acquire
- * 
- * -p <IPED> sets the pedestal current
- *
- * -t <time> sets acquisition time
- *
- * -r generates automatically a root file called <filename>.root
- *
- * -v increases the verbosity of the program, giving more information useful for debug
- *  ATTENTION verbosity decreases max acquisition rate, use it just for debug
- *  
- * The program needs or the number of events or the acquisition time. If both are set, 
- * than the program stops whne one of the conditions is satisfied.To stop it correctly, please
- * press Ctr+c.
- *
- * NOTE: clear_veto assures the veto signal corresponds to 0 (logic NIM);
- *      set_veto assures the veto signal corresponds to 1 (logic NIM);
- *      Both return 1 if they are working correctly.
- *
- * ** Authors: Nicola Alborè, Maria Adriana Sabia, Federica Troni and Alberto Tubito
+     * Questo programma permette di comunicare con l'elettronica VME (V792, V1718)
+     * della CAEN utilizzando le CaenVMELIB per inizializzare e acquisire i dati.
+     *
+     * Opzioni 
+     * 
+     * -q <filename> salva l'output del qdc in formato testuale nel file filename
+     *  (obbligatorio)
+     * -q <filename> salva l'output del tdc in formato testuale nel file filename
+     *  (obbligatorio)
+     *
+     * -n <nevents> imposta il numero di eventi da acquisire
+     * 
+     * -p <IPED> imposta la corrente di piedistallo
+     *
+     * -T <time> imposta il tempo di acquisizione
+     *
+     * -r genera automaticamente il file di root con nome <filename>.root
+     *
+     * -v aumenta la verbosità del programma fornendo informazioni utili per i debug
+     *  ATTENZIONE l'aumento della verbosità diminuisce la rate massima
+     *  d'acquisizione non utilizzare -v durante la presa dati ma solo per
+     *  effettuare debug
+     *
+     * il programma dovra' ricevere almeno o il numero di eventi o il tempo di
+     * acquisizione se vengono forniti tutti e due il programma termina quando una
+     * delle due condizioni viene raggiunta ignorando l'altra. Per arrestare il
+     * programma manualmente premere Ctrl+c per deinizializzare correttamente
+     * l'elettronica e salvare i dati acquisiti sul disco.
+     *
+     * Il presente programma e' rilasciato "as is" gli autori non si assumono
+     * nessuna responsabilita' per aventuali malfunzionamenti o bug
+     * 
+     *NOTA: clear_veto fa in modo che il segnale di veto in uscita corrisponda allo zero NIM logico;
+     *      set_veto fa in modo che il segnale di veto in uscita corrisponda all'1 NIM logico.
+     *      Le funzioni clear_veto e set_veto restituiscono un valore int pari ad 1 se le rispettive operazioni sono andate a buon fine,
+     *      altro in caso contrario.
+     *
+     * **
+     * ** Author: Daniele Racanelli, Flavio Pisani, Paolo Cretaro
+     * **Coauthor: Gaia Franciosini, Luca Ceccarelli, Pippo Franco, Alessandro Santoni
+
+
 
 
      * -------------------------------------------------------------------------*/
@@ -89,7 +104,7 @@
 
    int main(int argc, char** argv)
     {
-	    /************************* PARAMETERS PARSING **************************
+	    /************************* PARSING DEI PARAMETRI **************************
 	     */
 	    int opt;
 	    unsigned long EvMax = 0;
@@ -148,7 +163,7 @@
 	    if(output_filename_basic == NULL || (EvMax == 0 && TMax == 0)){
 		    print_usage(stderr, argv[0], EXIT_FAILURE);
 	    }
-	    /********************************* PARMETERS FINE PARSING *********************************/
+	    /********************************* FINE PARSING PARAMETRI *********************************/
 	    printf("Selected ped=%lu \n", Pmax);	
 
 	    int status_init,status;
@@ -247,7 +262,7 @@
       /*---------------Setting the output file----------------*/
       /*QDC output file*/
 
-	    fprintf(output_file,"#Ev.\t");
+	    fprintf(output_file,"#Ev.\tEv.Buffer\t");
 	    for(int i=0;i<V792N_CHANNEL/2;i++){
 		    fprintf(output_file,"CH %d\t", i);
 		    fprintf(output_file,"CH %d\t", i + V792N_CHANNEL/2);
@@ -278,13 +293,14 @@
 
 	    /*---------STARTING ACQUISITION TIME--------------*/
 	    clock_gettime(CLOCK_MONOTONIC, &start);
-	    unsigned long EvNum = 0,EvNumTdc =0;
+	    unsigned long Event = 0, EvNum = 0,EvNumTdc =0;
 
       /*---------MAIN ACQUISITION CYCLE--------------*/
 	    while((((EvMax != 0) && (EvNum < EvMax)) || ((TMax != 0) && (time_curr < TMax)))
 			    && (exit_signal==false)){
 		    status=1;
 		    trigger = false;
+		    
 		    /*---------WAITING FOR TRIGGER--------------*/
 		    while (trigger==false && status==1 && exit_signal == false){
 			    status = trigger_interrupt(BHandle, &trigger);
@@ -310,25 +326,31 @@
 		    valid = (DataAdc[0] >> 24) & 0x7; //Bit di controllo 26-24 
 		    validtdc = (DataTdc[0] >> 24) & 0x7; //Bit di controllo 26-24 
 		    
-        int k=0, j=0;
+       			
+		    int k=0, j=0;
 
 		    /*-------UNPACKING DATA FROM BUFFER AND DISCARTING NON VALID EVENTS--------*/
 		    while( valid == 2 ){ // events with control bit 010
 	//start from  33
+			if( k>=34){
+	                      for(int i=1;i<Vdd00N_CHANNEL+1;i++){    
+				      fprintf(output_file,"-999\t");									        
+	      		      } 
+	                 }
 			    EvNum =DataAdc[k+V792N_CHANNEL+1] & 0xffffff; //Bit 0-24
-			    fprintf(output_file, "\n%lu\t", EvNum);
-
+			    fprintf(output_file, "\n%lu\t%lu\t\t",Event, EvNum);
 			    for(int i=1;i<V792N_CHANNEL+1;i++){ //from1 to 32 channels
 				    fprintf(output_file,"%lu\t",DataAdc[k+i] & 0xfff);//Bit 0-11 (dato)
 			    }
 	  //if k = 0 , 0+33+2 = 35 
 			    //printf("\n k = %d\n",k);
+			
+			    //printf("k= %d \n",k);
 			    k += V792N_CHANNEL+2;
-	 
+
 			    valid = (DataAdc[k] >> 24) & 0x7; //Bit di controllo 26-24
 		    }
-
-		    while( validtdc == 2 ){ // events with control bit 010
+ 			    while( validtdc == 2 ){ // events with control bit 010
 			    //start from  17
 		      EvNumTdc =DataTdc[j+Vdd00N_CHANNEL+1] & 0xffffff; //x2
 			    
@@ -338,16 +360,17 @@
 			    //if k = 0 , 0+16+2 = 18
 			    //printf("\n j = %d\n",j);
 			    // j += Vdd00N_CHANNEL+2;
+			    
+			    //printf("j= %d \n",j);
 			    j += 18;
 			    validtdc = (DataTdc[j] >> 24) & 0x7;
 			    //printf("valid dopo run è %d\n",validtdc);
-			    //printf("k = %d j = %d \n",k,j);
-
-			    //for(int y = 0; y < 18; y++){
+			    			    //for(int y = 0; y < 18; y++){
 			    //  printf("DataTdc[%d] = %lu \n",y, DataTdc[y]);
 			    //    }
 		              }
 		    
+		    Event++;
 	/*-----WRITING DATA TO DISK------------*/
 		    fflush(output_file);
 		    if(verbose>0){
